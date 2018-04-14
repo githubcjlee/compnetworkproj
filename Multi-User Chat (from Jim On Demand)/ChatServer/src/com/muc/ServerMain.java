@@ -7,12 +7,12 @@ package com.muc;
  */
 public class ServerMain {
     public static void main(String[] args) {
-        int port = 8818;
+        //int port = 8818;
         int port2 = 9918;
-        ServerTCP server = new ServerTCP(port);
+        //ServerTCP server = new ServerTCP(port);
         ServerUDP serverUDP = new ServerUDP(port2);
         
-        server.start();
+        //server.start();
         serverUDP.start();
     }
 }
