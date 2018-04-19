@@ -1,32 +1,21 @@
 package com.server.model;
 
 public class ChatLog {
-	private int chatId;
 	private int sessionId;
 	private String chatText;
 
-	private static final String [] HEADER = {"sessionId","clientA","clientB","encryptionKey"};
+	private static final String [] HEADER = {"sessionId","chatText"};
 
 	public static String[] getHeader() {
 		return HEADER;
 	}
 
 
-	public ChatLog(int chatId,int sessionId, String chatText) {
-		this.chatId = chatId;
+	public ChatLog(int sessionId, String chatText) {
 		this.sessionId = sessionId;
 		this.chatText = chatText;
 	}
 
-
-	public int getChatId() {
-		return chatId;
-	}
-
-
-	public void setChatId(int chatId) {
-		this.chatId = chatId;
-	}
 
 
 	public int getSessionId() {

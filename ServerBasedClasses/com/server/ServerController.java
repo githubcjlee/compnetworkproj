@@ -2,6 +2,7 @@ package com.server;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +23,7 @@ import org.apache.commons.csv.CSVRecord;
 public class ServerController {
 	private String USERS_LIST_PATH = "resources/users.csv";
 	private String CHAT_LIST_PATH = "resources/chatList.csv";
-	private String CHAT_HISTORY_PATH = "resources/chatHistory.csv";
+	private String CHAT_HISTORY_PATH = "/C:/Users/Charlie/git/compnetworkproj/build/classes/chatHistory.csv";
 	private List<OnlineUser> usersOnline;
 	
 	public ServerController() {
@@ -94,7 +95,7 @@ public class ServerController {
 	}
 	
 	//CHAT HISTORY
-	private List<ChatLog> requestHistory(int clientA, int clientB){
+	private String[] requestHistory(int clientA, int clientB){
 		
 		List<ChatList> chatLogList = new ArrayList<ChatList>(getChatList().values());
 		
@@ -108,7 +109,7 @@ public class ServerController {
 			int client1 = chatLogList.get(i).getClientA();
 			int client2 = chatLogList.get(i).getClientB();
 			
-			if(clientA == client2 && clientB == client2) {
+			if(clientA == client1 && clientB == client2) {
 				sessionId = chatLogList.get(i).getSessionId();
 			}
 		}
@@ -124,7 +125,8 @@ public class ServerController {
         CSVFormat csvFileFormat = CSVFormat.DEFAULT.withHeader(logHead);
      
         //Create a new list of student to be filled by CSV file data 
-        List<ChatLog> chatLog = new ArrayList<ChatLog>();
+       // List<ChatLog> chatLog = new ArrayList<ChatLog>();
+        String[] chatLog = null;
         
         try {
         	
@@ -137,17 +139,13 @@ public class ServerController {
             
             //Get a list of CSV file records
             List<CSVRecord> csvRecords = csvFileParser.getRecords(); 
-            
+            chatLog = new String[csvRecords.size()];
+            		
             //Read the CSV file records starting from the second record to skip the header
             for (int i = 1; i < csvRecords.size(); i++) {
             	CSVRecord record = csvRecords.get(i);
-            	//Create a new student object and fill his data
-            	ChatLog chat = new ChatLog(
-	            			Integer.parseInt(record.get(logHead[0])), 
-	            			Integer.parseInt(record.get(logHead[1])), 
-	            			record.get(logHead[2])
-            			);
-            	chatLog.add(chat);	
+
+            	chatLog[i] = record.get(logHead[1]);	
 			}
             
         } 
@@ -164,18 +162,104 @@ public class ServerController {
             }
         }
 		
+        
 		
 		return chatLog;
 	}
 	
+	//Delimiter used in CSV file
+	private static final String NEW_LINE_SEPARATOR = "\n";
 
 	private void logChat(int sessionId, String chatText){
+		
+	
+		FileWriter fileWriter = null;
+		CSVPrinter csvFilePrinter = null;
+		
+		//Create the CSVFormat object with "\n" as a record delimiter
+		
+				
+		try {
+			
+			//initialize FileWriter object
+			fileWriter = new FileWriter(CHAT_HISTORY_PATH, true);
+			//initialize CSVPrinter object 
+	        csvFilePrinter = new CSVPrinter(fileWriter, CSVFormat.DEFAULT);
+	        //Create CSV file header
+	        
+			//Write a new student object list to the CSV file
+	        List studentDataRecord = new ArrayList();
+            studentDataRecord.add(String.valueOf(sessionId));
+            studentDataRecord.add(chatText);
+            
+	        csvFilePrinter.printRecord(studentDataRecord);
+
+			//System.out.println("CSV file was created successfully !!!");
+			
+		} catch (Exception e) {
+			System.out.println("Error in CsvFileWriter !!!");
+			e.printStackTrace();
+		} finally {
+			try {
+				fileWriter.flush();
+				fileWriter.close();
+				csvFilePrinter.close();
+			} catch (IOException e) {
+				System.out.println("Error while flushing/closing fileWriter/csvPrinter !!!");
+                e.printStackTrace();
+			}
+		}
 		
 	}
 
 	
 	public static void main(String args[]) {
 		ServerController myFunction = new ServerController();
+		myFunction.logChat(1,"Hello!");
+		
+
+		FileReader fileReader = null;
+		CSVParser csvFileParser = null;
+		String[] logHead = ChatLog.getHeader();
+		//Create the CSVFormat object with the header mapping
+        CSVFormat csvFileFormat = CSVFormat.DEFAULT.withHeader(logHead);
+     
+        //Create a new list of student to be filled by CSV file data 
+       // List<ChatLog> chatLog = new ArrayList<ChatLog>();
+        
+        try {
+        	
+            
+            //initialize FileReader object
+            fileReader = new FileReader(myFunction.CHAT_HISTORY_PATH);
+            
+            //initialize CSVParser object
+            csvFileParser = new CSVParser(fileReader, csvFileFormat);
+            
+            //Get a list of CSV file records
+            List<CSVRecord> csvRecords = csvFileParser.getRecords(); 
+            		
+            //Read the CSV file records starting from the second record to skip the header
+            for (int i = 1; i < csvRecords.size(); i++) {
+            	CSVRecord record = csvRecords.get(i);
+            	ChatLog log = new ChatLog(Integer.parseInt(record.get(logHead[0])),record.get(logHead[1]));
+            	System.out.println(log.getChatText());	
+			}
+            
+        } 
+        catch (Exception e) {
+        	System.out.println("Error in CsvFileReader !!!");
+            e.printStackTrace();
+        } finally {
+            try {
+                fileReader.close();
+                csvFileParser.close();
+            } catch (IOException e) {
+            	System.out.println("Error while closing fileReader/csvFileParser !!!");
+                e.printStackTrace();
+            }
+        }
+        
 	}
 	
 }
