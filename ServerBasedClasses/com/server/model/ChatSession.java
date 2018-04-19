@@ -2,7 +2,7 @@ package com.server.model;
 
 
 
-public class ChatList {
+public class ChatSession {
 	private int sessionId;
 	private int clientA;
 	private int clientB;
@@ -15,13 +15,17 @@ public class ChatList {
 		return HEADER;
 	}
 
-	public ChatList(){
-		
+	public ChatSession(int sessionId, int clientA, int clientB, String encryptionKey){
+		this.sessionId = sessionId;
+		this.clientA = clientA;
+		this.clientB = clientB;
+		this.encryptionKey = encryptionKey;
 	}
 
 	public int getSessionId() {
 		return sessionId;
 	}
+
 
 	public void setSessionId(int sessionId) {
 		this.sessionId = sessionId;
@@ -51,6 +55,11 @@ public class ChatList {
 		this.encryptionKey = encryptionKey;
 	}
 
-	
+
+	@Override
+	public String toString() {
+		return "ChatSession [sessionId=" + sessionId + ", clientA=" + clientA + ", clientB=" + clientB
+				+ ", encryptionKey=" + encryptionKey + "]";
+	}
 
 }

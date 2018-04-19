@@ -1,4 +1,5 @@
-ted, ted
-admin, admin
-guest, guest
-charlie, charlie
+id,password
+ted,ted
+admin,admin
+guest,guest
+charlie,charlie

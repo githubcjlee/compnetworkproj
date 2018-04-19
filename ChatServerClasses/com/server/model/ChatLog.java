@@ -5,17 +5,9 @@ public class ChatLog {
 	private int sessionId;
 	private String chatText;
 
-	private static final String [] HEADER = {"chatId","sessionId","chatText"};
 
-	public ChatLog(int chatId, int sessionId, String chatText) {
-		this.chatId = chatId;
-		this.sessionId = sessionId;
-		this.chatText = chatText;
-	}
-
-
-	public static String[] getHeader() {
-		return HEADER;
+	public ChatLog() {
+		
 	}
 
 
@@ -46,12 +38,6 @@ public class ChatLog {
 
 	public void setChatText(String chatText) {
 		this.chatText = chatText;
-	}
-
-
-	@Override
-	public String toString() {
-		return "ChatLog [chatId=" + chatId + ", sessionId=" + sessionId + ", chatText=" + chatText + "]";
 	}
 	
 	

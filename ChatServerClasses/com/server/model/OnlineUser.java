@@ -8,18 +8,7 @@ public class OnlineUser {
 	private int port;
 	private boolean available;
 
-	private static final String [] HEADER = {"clientId","userId","ip","port","available"};
-
-	public static String[] getHeader() {
-		return HEADER;
-	}
-
-	public OnlineUser(int clientId, String userId, String ip, int port) {
-		this.clientId = clientId;
-		this.userId = userId;
-		this.ip = ip;
-		this.port = port;
-		this.available = true;
+	public OnlineUser() {
 		
 	}
 
@@ -61,12 +50,6 @@ public class OnlineUser {
 
 	public void setAvailable(boolean available) {
 		this.available = available;
-	}
-
-	@Override
-	public String toString() {
-		return "OnlineUser [clientId=" + clientId + ", userId=" + userId + ", ip=" + ip + ", port=" + port
-				+ ", available=" + available + "]";
 	}
 	
 	
