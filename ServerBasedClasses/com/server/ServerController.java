@@ -27,7 +27,7 @@ import org.apache.commons.csv.CSVRecord;
  */
 public class ServerController {
 	private String USERS_LIST_PATH;
-	private static String CHAT_LIST_PATH;
+	private String CHAT_LIST_PATH;
 	private String CHAT_HISTORY_PATH;
 	private Map<Integer, OnlineUser> usersOnline;
 	private Map<Integer, ChatSession> liveChats;
@@ -36,9 +36,9 @@ public class ServerController {
 		usersOnline = new HashMap<Integer, OnlineUser>();
 		liveChats = new HashMap<Integer, ChatSession>();
 
-		USERS_LIST_PATH = ServerController.class.getResource("/users.csv").getPath();
-		CHAT_LIST_PATH = ServerController.class.getResource("/chatList.csv").getPath();
-		CHAT_HISTORY_PATH = ServerController.class.getResource("/chatHistory.csv").getPath();
+		USERS_LIST_PATH = this.getClass().getResource("/users.csv").getFile();
+		CHAT_LIST_PATH = this.getClass().getResource("/chatList.csv").getFile();
+		CHAT_HISTORY_PATH = this.getClass().getResource("/chatHistory.csv").getFile();
 		
 	}
 	
@@ -201,8 +201,9 @@ public class ServerController {
 		ServerController myFunction = new ServerController();
 		List<ChatSession> myChats = new ArrayList<ChatSession>(myFunction.getChatList().values());
 		for (int i = 0; i < myChats.size(); i++) {
-			System.out.println(myChats.get(i).toString());
+			System.out.println(myChats.get(0).toString());
 		}
+		System.out.println(myFunction.CHAT_LIST_PATH);
 	}
 	
 }
