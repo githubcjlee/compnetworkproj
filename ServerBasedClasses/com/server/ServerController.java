@@ -1,15 +1,13 @@
 package com.server;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.server.model.ChatSession;
 import com.server.model.ChatLog;
@@ -36,14 +34,14 @@ public class ServerController {
 		usersOnline = new HashMap<Integer, OnlineUser>();
 		liveChats = new HashMap<Integer, ChatSession>();
 
-		USERS_LIST_PATH = this.getClass().getResource("/users.csv").getFile();
-		CHAT_LIST_PATH = this.getClass().getResource("/chatList.csv").getFile();
-		CHAT_HISTORY_PATH = this.getClass().getResource("/chatHistory.csv").getFile();
+		USERS_LIST_PATH = this.getClass().getClassLoader().getResource("users.csv").getFile();
+		CHAT_LIST_PATH = this.getClass().getClassLoader().getResource("chatList.csv").getFile();
+		CHAT_HISTORY_PATH = this.getClass().getClassLoader().getResource("chatHistory.csv").getFile();
 		
 	}
 	
 	//USERS
-	private boolean checkUserStatus(int clientId) {
+	public boolean checkUserStatus(int clientId) {
 		boolean status = false;
 
 		for (int i = 0; i < usersOnline.size(); i++) {
@@ -55,9 +53,16 @@ public class ServerController {
 		return status;
 	}
 	
+	public boolean isValidLogin(String id, String password) {
+		boolean valid = false;
+		
+		
+		return valid;
+	}
+	
 	//USERS ONLINE
 	//adds a newly logged in user to array
-	private boolean addOnlineUser(int clientId, String userId, String ip, int port){
+	public boolean addOnlineUser(int clientId, String userId, String ip, int port){
 		OnlineUser newUser = new OnlineUser(clientId,userId,ip,port);
 		
 		if (usersOnline.containsKey(clientId)) {
@@ -74,19 +79,19 @@ public class ServerController {
 	}
 
 	//removes user by Client ID
-	private void removeOnlineUser(int clientId){
+	public void removeOnlineUser(int clientId){
 		usersOnline.remove(clientId);
 	}
 
 	//Lists all online users on server to server console
-	private void showOnlineUsers() {
+	public void showOnlineUsers() {
 		for (int i = 0; i < usersOnline.size(); i++) {
 			System.out.println(usersOnline.get(i));
 		}
 	}
 	
 	//CHAT LIST, LIST OF CHATS WITH LIVE/ONGOING SESSION
-	private boolean requestChatSession(int clientA, int clientB){
+	public boolean requestChatSession(int clientA, int clientB){
 		//both users are online AND available 
 		if(checkUserStatus(clientA) && checkUserStatus(clientB)){
 			//create chat
@@ -106,7 +111,7 @@ public class ServerController {
 
 	private void createChatSession(int clientA, int clientB, String CKA){
 		//Save to ChatList
-		int sessionId = 0;
+		int sessionId = Collections.max(this.getChatList().keySet()) + 1;
 		
 		//add to liveChatList
 		ChatSession chat = new ChatSession(sessionId, clientA, clientB, CKA);
@@ -114,14 +119,25 @@ public class ServerController {
 		
 		
 		//Make both clients unavailable
+		usersOnline.get(clientA).setAvailable(false);
+		usersOnline.get(clientB).setAvailable(false);
 		
 	}
 	
-	private void endSession(int clientId){
+	public void endSession(int clientId){
 		//search array chatList
-		//look for ClinetId and if match
-		//end that session with sessionId
-		
+		for (ChatSession chat : liveChats.values()) {
+			//look for ClinetId and if match
+			//end that session with sessionId
+			if (chat.getClientA() == clientId || chat.getClientB() == clientId) {
+				//close chat
+				liveChats.remove(chat.getSessionId());
+				
+				//mark both clients available again
+				usersOnline.get(chat.getClientA()).setAvailable(true);
+				usersOnline.get(chat.getClientB()).setAvailable(true);
+			}
+		} 
 		
 	}
 
@@ -182,7 +198,7 @@ public class ServerController {
 	
 	
 	//CHAT HISTORY
-	private List<ChatLog> requestHistory(int clientA, int clientB){
+	public List<ChatLog> requestHistory(int clientA, int clientB){
 		
 		List<ChatLog> chatLogList = new ArrayList<ChatLog>();
 		
@@ -192,18 +208,12 @@ public class ServerController {
 	}
 	
 
-	private void logChat(int sessionId, String chatText){
+	public void logChat(int sessionId, String chatText){
 		
 	}
 
 	
 	public static void main(String args[]) {
-		ServerController myFunction = new ServerController();
-		List<ChatSession> myChats = new ArrayList<ChatSession>(myFunction.getChatList().values());
-		for (int i = 0; i < myChats.size(); i++) {
-			System.out.println(myChats.get(0).toString());
-		}
-		System.out.println(myFunction.CHAT_LIST_PATH);
 	}
 	
 }
