@@ -1,17 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry excluding="build/classes/|build/classes/com/muc/|build/classes/com/server/lib/|build/classes/com/server/model/|build/|ChatServerClasses/com/server/|ChatServerClasses/com/server/lib/|ChatServerClasses/com/server/model/|resource/|ServerBasedClasses/com/server/|ServerBasedClasses/com/server/lib/|ServerBasedClasses/com/server/model/|src/comp/net/serverbased/|ChatServerClasses/com/|src/comp/net/|src/comp/|src/|ServerBasedClasses/|ChatServerClasses/|ServerBasedClasses/" kind="src" path=""/>
 	<classpathentry kind="src" path="ServerBasedClasses"/>
-	<classpathentry kind="src" path="Multi-User Chat (from Jim On Demand)/ChatServer/src"/>
-	<classpathentry kind="src" path="Multi-User Chat (from Jim On Demand)/ChatClient/src"/>
-	<classpathentry kind="src" path="resource"/>
-	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
-		<attributes>
-			<attribute name="owner.project.facets" value="java"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="Multi-User Chat (from Jim On Demand)/ChatClient/lib/commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="Multi-User Chat (from Jim On Demand)/ChatServer/lib/logback-classic-1.1.3.jar"/>
 	<classpathentry kind="lib" path="Multi-User Chat (from Jim On Demand)/ChatServer/lib/logback-core-1.1.3.jar"/>
 	<classpathentry kind="lib" path="ServerBasedClasses/com/server/lib/commons-csv-1.5.jar"/>
-	<classpathentry kind="output" path="build/classes"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
