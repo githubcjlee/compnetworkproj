@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class ChatClient {
 
-	private static int id;
+	private int id;
 	private int rand_cookie;
 
 	// UDP variables - Port numbers and IP addresses
@@ -22,6 +22,51 @@ public class ChatClient {
 	private InputStream serverIn;
 	private OutputStream serverOut;
 	private BufferedReader bufferedIn;
+
+	
+	public static void main(String[] args) throws IOException {
+
+		System.out.println("\nWelcome to our Server-Based-Chat program.\n" + "Please select/enter your user ID."
+				+ "\n\n\tUserID's" + "\n\t 100" + "\n\t 200" + "\n\t 300" + "\n\t 400" + "\n\t 500" + "\n\t 600"
+				+ "\n\n");
+
+		Scanner input = new Scanner(System.in);
+		String login = input.nextLine();
+		
+		ChatClient client = new ChatClient(Integer.parseInt(login));
+
+		System.out.println("\nSelected UserID = " + login);
+		System.out.println("\nPlease enter a command....\n");
+		while (true) {
+			
+			
+			String line = input.nextLine();
+			String[] tokens = line.split(" ", 2);
+			if ("logon".equalsIgnoreCase(tokens[0])) {
+
+				if (client.start_udp() != 1) {
+					System.out.println("\t*Authentication failed.");
+				} else {
+					client.start_tcp();
+				}
+			} else if ("chat".equalsIgnoreCase(tokens[0])) {
+				if (tokens[1] == null || tokens.length > 2) {
+					System.out.println("Pick an online user.");
+				} else {
+					String msg = "CHAT(" + tokens[1] + ")\n";
+					client.serverOut.write(msg.getBytes());
+					
+				}
+			} else if ("offline".equalsIgnoreCase(tokens[0])) {
+
+			} else if ("end".equalsIgnoreCase(tokens[0]) && "chat".equalsIgnoreCase(tokens[1])) {
+
+			} else {
+				client.msg(line);
+			}
+		}
+		
+	}
 
 	// Constructor
 	public ChatClient(int _id) throws UnknownHostException, SocketException {
@@ -140,6 +185,7 @@ public class ChatClient {
 	private void readMessageLoop() {
 		try {
 			String line;
+			System.out.println("Ready for messages");
 			while ((line = bufferedIn.readLine()) != null) {
 				
 				String[] tokens = line.split("\\(");
@@ -150,9 +196,15 @@ public class ChatClient {
 					String cmd = tokens[0];
 					if ("CONNECTED".equalsIgnoreCase(cmd)) {
 						System.out.println("CONNECTED!");
+					} else if ("ALERT".equalsIgnoreCase(cmd)) {
+						handleAlert(tokens[1]);
+					}  else if ("ERROR".equalsIgnoreCase(cmd)) {
+						handleError(tokens[1]);
 					} else if ("MSG".equalsIgnoreCase(cmd)) {
 						// String[] tokensMsg = StringUtils.split(line, null, 3);
 						handleMessage(tokens[1]);
+					} else if ("UNKNOWN".equalsIgnoreCase(cmd)) {
+						System.out.println("Unknown command!");
 					}
 				}
 			}
@@ -166,8 +218,16 @@ public class ChatClient {
 		}
 	}
 
+	private void handleAlert(String tokensMsg) {
+		System.out.println("[Alert]:" + tokensMsg);
+	}
+	
+	private void handleError(String tokensMsg) {
+		System.out.println("[Error]:" + tokensMsg);
+	}
+	
 	private void handleMessage(String tokensMsg) {
-		System.out.println("[Them]:" + tokensMsg);
+		System.out.println(tokensMsg);
 	}
 
 	public void connect() {
@@ -185,42 +245,7 @@ public class ChatClient {
 			e.printStackTrace();
 		}
 	}
+	
 
-	public static void main(String[] args) throws IOException {
-
-		System.out.println("\nWelcome to our Server-Based-Chat program.\n" + "Please select/enter your user ID."
-				+ "\n\n\tUserID's" + "\n\t 100" + "\n\t 200" + "\n\t 300" + "\n\t 400" + "\n\t 500" + "\n\t 600"
-				+ "\n\n");
-
-		Scanner input = new Scanner(System.in);
-		String login = input.nextLine();
-		
-		ChatClient client = new ChatClient(Integer.parseInt(login));
-
-		System.out.println("\nSelected UserID = " + login);
-		System.out.println("\nPlease enter a command....\n");
-		while (true) {
-			String line = input.nextLine();
-			String[] tokens = line.split(" ", 2);
-			if ("logon".equalsIgnoreCase(tokens[0])) {
-
-				if (client.start_udp() != 1) {
-					System.out.println("\t*Authentication failed.");
-				} else {
-					client.start_tcp();
-				}
-			} else if ("chat".equalsIgnoreCase(tokens[0])) {
-				String msg = "CHAT(" + tokens[1] + ")\n";
-				client.serverOut.write(msg.getBytes());
-
-			} else if ("offline".equalsIgnoreCase(tokens[0])) {
-
-			} else if ("end".equalsIgnoreCase(tokens[0]) && "chat".equalsIgnoreCase(tokens[1])) {
-
-			} else {
-				client.msg(line);
-			}
-		}
-	}
 
 }
