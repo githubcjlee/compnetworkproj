@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.*;
 import java.util.Random;
 
+import com.chat.plugin.AESKeyGeneration;
+
 public class ServerUDPWorker extends Thread {
 
 	private final DatagramSocket server;
@@ -42,7 +44,7 @@ public class ServerUDPWorker extends Thread {
 		int route = 1;
 
 		int rand = 0;
-		int xres = 0;
+		String xres = "";
 
 		while (route > 0) {
 
@@ -50,52 +52,43 @@ public class ServerUDPWorker extends Thread {
 				// Wait for incoming message after initial message
 				DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 				this.server.receive(receivePacket);
-				sentence = new String(receivePacket.getData());
+				//sentence = new String(receivePacket.getData());
+				sentence = new String(receivePacket.getData(), receivePacket.getOffset(), receivePacket.getLength(), "UTF-8");
+
 			}
-
 			// Split message to read protocol
-			String array[] = sentence.split("\\(");
-
-			// take off last parentheses
-			array[1] = array[1].substring(0, array[1].indexOf(')'));
+			String array[] = sentence.split(" ");
 
 			if ("HELLO".equals(array[0])) {
+				array[1] = array[1].trim();
+				this.ClientID = Integer.parseInt(array[1]);
 				// set client ID
 				// use client ID to look up client's secret key
-				this.ClientID = Integer.parseInt(array[1]);
-
+				
 				// If Client ID is NOT in list of subscribers, send AUTH_FAIL *** need to add in later
-
-				// Else:
-				// Create random number
 				rand = (int) (new Random().nextInt());
-
-				// Use Client's secret key and rand to create xres (currently arbitrarily set to
-				// ID)
-				xres = this.ClientID;
-
+				// Use Client's secret key and rand to create xres
+				AESKeyGeneration crypto = new AESKeyGeneration();
+				xres = crypto.generateSymmetricKey( rand + "password");
+				
 				// set message to CHALLENGE
-				reply = "CHALLENGE(" + rand + ")";
+				reply = "CHALLENGE " + rand;
 				route++;
 			}
 
-			else if ("RESPONSE".equals(array[0])) {
+			else if ("RESPONSE".equals(array[0])) {	
+				// index 1 = id and index2 = res
+				array[2] = array[2].trim();
 				
-				// split contents into ID and res
-				String array2[] = array[1].split(",");
-
-				// For now testing xres against ID but should be array2[1]
-				if (this.ClientID == Integer.parseInt(array2[0]) && xres == Integer.parseInt(array2[1])) {
-					// set message to Auth_succ and send with rand_cookie, using rand from challenge
-					// for now
-					reply = "AUTH_SUCC(" + rand + "," + this.ServerTCPPort + ")";
-
+				// Test xres against res(from client)
+				if ( xres.equals(array[2])) {
+					rand = (int) (new Random().nextInt());
+					reply = "AUTH_SUCC " + rand + " " + this.ServerTCPPort;
 					route = -1;
 				} else {
 					reply = "AUTH_FAIL";
 					route = -1;
 				}
-
 			}
 			
 			// Send out reply

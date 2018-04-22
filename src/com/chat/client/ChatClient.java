@@ -5,6 +5,8 @@ import java.net.*;
 import java.io.*;
 import java.util.Scanner;
 
+import com.chat.plugin.AESKeyGeneration;
+
 public class ChatClient {
 
 	private int id;
@@ -23,23 +25,21 @@ public class ChatClient {
 	private OutputStream serverOut;
 	private BufferedReader bufferedIn;
 
-	
 	public static void main(String[] args) throws IOException {
 
-		System.out.println("\nWelcome to our Server-Based-Chat program.\n" + "Please select/enter your user ID."
-				+ "\n\n\tUserID's" + "\n\t 100" + "\n\t 200" + "\n\t 300" + "\n\t 400" + "\n\t 500" + "\n\t 600"
-				+ "\n\n");
+		System.out.println(
+				"\nWelcome to our Server-Based-Chat program.\n" + "Please select/enter your user ID." + "\n\n\tUserID's"
+						+ "\n\t 100" + "\n\t 200" + "\n\t 300" + "\n\t 400" + "\n\t 500" + "\n\t 600" + "\n\n");
 
 		Scanner input = new Scanner(System.in);
 		String login = input.nextLine();
-		
+
 		ChatClient client = new ChatClient(Integer.parseInt(login));
 
 		System.out.println("\nSelected UserID = " + login);
 		System.out.println("\nPlease enter a command....\n");
 		while (true) {
-			
-			
+
 			String line = input.nextLine();
 			String[] tokens = line.split(" ", 2);
 			if ("logon".equalsIgnoreCase(tokens[0])) {
@@ -55,7 +55,7 @@ public class ChatClient {
 				} else {
 					String msg = "CHAT(" + tokens[1] + ")\n";
 					client.serverOut.write(msg.getBytes());
-					
+
 				}
 			} else if ("offline".equalsIgnoreCase(tokens[0])) {
 
@@ -65,7 +65,7 @@ public class ChatClient {
 				client.msg(line);
 			}
 		}
-		
+
 	}
 
 	// Constructor
@@ -86,7 +86,7 @@ public class ChatClient {
 		String sentence = "";
 
 		// variables that we need for authentication process
-		int res = 0;
+		String res = "";
 		int rand = 0;
 
 		// Select message to be sent
@@ -95,10 +95,10 @@ public class ChatClient {
 			switch (route) {
 
 			case 1:
-				sentence = "HELLO(" + this.id + ")";
+				sentence = "HELLO " + this.id;
 				break;
 			case 2:
-				sentence = "RESPONSE(" + this.id + "," + res + ")";
+				sentence = "RESPONSE " + this.id + " " + res;
 				break;
 
 			default:
@@ -117,35 +117,30 @@ public class ChatClient {
 			sentence = new String(receivePacket.getData());
 
 			// Split message to read protocol
-			String array[] = sentence.split("\\(");
-
-			// take off last parentheses
-			array[1] = array[1].substring(0, array[1].indexOf(')'));
+			String array[] = sentence.split(" ");
+			array[1] = array[1].trim();
 
 			if ("CHALLENGE".equals(array[0])) {
-				rand = Integer.parseInt(array[1]);
+				// Use rand from message and pass in key/password
 
-				// **********************
-				// use rand and Client's secret key to create 'res'
-				// for now I am making this just an arbitrary integer equal to ID.
-				res = this.id;
+				rand = Integer.parseInt(array[1]);
+				AESKeyGeneration crypto = new AESKeyGeneration();
+				res = crypto.generateSymmetricKey(rand + "password");
+
 				route++;
 			} else if ("AUTH_SUCC".equals(array[0])) {
-
+				array[2] = array[2].trim();
 				// split contents into rand_cookie and port number for server-TCP port #
-				// array2[0] == rand_cookie ; array2[1] == TCP-Port#
-				String array2[] = array[1].split(",");
-
+				// array[1] == rand_cookie ; array[2] == TCP-Port#
+				
+				rand_cookie = Integer.parseInt(array[1]);
 				// Check save rand_cookie and send back with CONNECT message
-				if (array2[0].equals(String.valueOf(rand))) {
+				// if (array2[0].equals(String.valueOf(rand))) {
 
-					// Save port number and IP, for now hardcoding local host
-					this.serverPort = Integer.parseInt(array2[1]);
-
-				}
+				// Save port number and IP, for now hardcoding local host
+				this.serverPort = Integer.parseInt(array[2]);
 				route = -1;
 				return (1);
-
 			}
 
 			else {
@@ -187,7 +182,7 @@ public class ChatClient {
 			String line;
 			System.out.println("Ready for messages");
 			while ((line = bufferedIn.readLine()) != null) {
-				
+
 				String[] tokens = line.split("\\(");
 				// take off last parentheses
 				tokens[1] = tokens[1].substring(0, tokens[1].indexOf(')'));
@@ -198,7 +193,7 @@ public class ChatClient {
 						System.out.println("CONNECTED!");
 					} else if ("ALERT".equalsIgnoreCase(cmd)) {
 						handleAlert(tokens[1]);
-					}  else if ("ERROR".equalsIgnoreCase(cmd)) {
+					} else if ("ERROR".equalsIgnoreCase(cmd)) {
 						handleError(tokens[1]);
 					} else if ("MSG".equalsIgnoreCase(cmd)) {
 						// String[] tokensMsg = StringUtils.split(line, null, 3);
@@ -221,11 +216,11 @@ public class ChatClient {
 	private void handleAlert(String tokensMsg) {
 		System.out.println("[Alert]:" + tokensMsg);
 	}
-	
+
 	private void handleError(String tokensMsg) {
 		System.out.println("[Error]:" + tokensMsg);
 	}
-	
+
 	private void handleMessage(String tokensMsg) {
 		System.out.println(tokensMsg);
 	}
@@ -233,7 +228,7 @@ public class ChatClient {
 	public void connect() {
 		try {
 			this.socket = new Socket(serverName, serverPort);
-			//System.out.println("Client port is " + socket.getLocalPort());
+			// System.out.println("Client port is " + socket.getLocalPort());
 			this.serverOut = socket.getOutputStream();
 			this.serverIn = socket.getInputStream();
 			this.bufferedIn = new BufferedReader(new InputStreamReader(serverIn));
@@ -245,7 +240,5 @@ public class ChatClient {
 			e.printStackTrace();
 		}
 	}
-	
-
 
 }
