@@ -1,19 +1,25 @@
 package com.chat.model;
 
+/*
+ * @author Charlie Nguyen, Ted Ahn
+ * 
+ */
 public class ChatLog {
 	
 	private int sessionId;
+	private int byClientId;
 	private String chatText;
 
-	private static final String [] HEADER = {"sessionId","chatText"};
+	private static final String [] HEADER = {"sessionId","byClientId","chatText"};
 
 	public static String[] getHeader() {
 		return HEADER;
 	}
 
 
-	public ChatLog(int sessionId, String chatText) {
+	public ChatLog(int sessionId, int byClientId, String chatText) {
 		this.sessionId = sessionId;
+		this.byClientId = byClientId;
 		this.chatText = chatText;
 	}
 
@@ -29,6 +35,16 @@ public class ChatLog {
 	}
 
 
+	public int getByClientId() {
+		return byClientId;
+	}
+
+
+	public void setByClientId(int byClientId) {
+		this.byClientId = byClientId;
+	}
+
+
 	public String getChatText() {
 		return chatText;
 	}
@@ -41,10 +57,7 @@ public class ChatLog {
 
 	@Override
 	public String toString() {
-		return "ChatLog [sessionId=" + sessionId + ", chatText=" + chatText + "]";
+		return "ChatLog [sessionId=" + sessionId + ", byClientId=" + byClientId + ", chatText=" + chatText + "]";
 	}
-	
-	
-	
 	
 }

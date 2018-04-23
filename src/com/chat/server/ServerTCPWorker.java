@@ -1,19 +1,36 @@
 package com.chat.server;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
 
+import com.chat.controller.ServerController;
+import com.chat.model.ChatSession;
+import com.chat.plugin.AESKeyGeneration;
+import com.chat.plugin.StrongAES;
 
+/*
+ * @author Aaron Im
+ * @contributor Ted Ahn
+ */
 public class ServerTCPWorker extends Thread {
 
 	private final Socket clientSocket;
 	private final ServerTCP server;
 	private OutputStream outputStream;
-	private String login = null;
-	private boolean available = true;
+	private int login = -1;
 	private ServerTCPWorker friendWorker = null;
+	private ServerController controller = new ServerController();
+	private ChatSession openSession = null;
 
+	private String CKA = null;
+	StrongAES workerCryptor = new StrongAES();
+	
 	public ServerTCPWorker(ServerTCP server, Socket clientSocket) {
 		this.server = server;
 		this.clientSocket = clientSocket;
@@ -40,48 +57,95 @@ public class ServerTCPWorker extends Thread {
 		while ((line = reader.readLine()) != null) {
 			System.out.println("[TCP-W] incoming message from " + login + " =\"" + line + "\"");
 			
-			String[] tokens = line.split("\\(");
-			
-			if (tokens != null && tokens.length > 0) {
+			//String[] tokens = line.split("\\(");
+			String cmd = line.substring(0, line.indexOf('('));
+			String param = line.substring(line.indexOf('(') + 1, line.lastIndexOf(')'));
+			if (cmd != null || param != null) {
 				String msg = "";
-				String cmd = tokens[0];
 				
 				// take off last parentheses
-				tokens[1] = tokens[1].substring(0, tokens[1].indexOf(')'));
-
+				
 				if ("CONNECT".equalsIgnoreCase(cmd)) {
-					handleLogin(outputStream, tokens);
+					handleLogin(outputStream, param);
 					msg = "CONNECTED()\n";
 					outputStream.write(msg.getBytes());
+					
+					AESKeyGeneration keyGen = new AESKeyGeneration();
+					CKA = keyGen.generateChatKey(""+server.usersKey.get(login));
 				} 
-				else if ("MSG".equalsIgnoreCase(cmd)) {
-					if (friendWorker == null) {
+				else if ("CHAT".equalsIgnoreCase(cmd)) {
+					if (friendWorker == null || openSession == null) {
 						msg = "ERROR(You are currently not chatting with anyone.)\n";
 						outputStream.write(msg.getBytes());
 					} else {
-						sendMessage(tokens[1]);
+						sendMessage(param);
 					}
 				} 
-				else if ("CHAT".equalsIgnoreCase(cmd)) {
-					if (handleJoin(tokens[1]) && friendWorker.handleJoin(login)) {
-						msg = "ALERT(Chat opened with " + friendWorker.getLogin() + ")\n";
-						outputStream.write(msg.getBytes());
-						msg = "ALERT(Chat opened with " + login + ")\n";
-						friendWorker.outputStream.write(msg.getBytes());
-					} else {
-						msg = "ERROR(Could not connect to user " + tokens[1] + ")\n";
+				else if ("CHAT_REQUEST".equalsIgnoreCase(cmd)) {
+					try {
+						int clientIdB = Integer.parseInt(param);
+						if (handleJoin(clientIdB) && friendWorker.handleJoin(login) && server.usersKey.containsKey(login)) {
+							
+							openSession = controller.storeChatSession(login, friendWorker.getLogin(), CKA);
+							friendWorker.openSession = this.openSession;
+							
+							msg = "CHAT_STARTED("+openSession.getSessionId()+","+clientIdB+")\n";
+							outputStream.write(msg.getBytes());
+							msg = "CHAT_STARTED("+openSession.getSessionId()+","+login+")\n";
+							friendWorker.outputStream.write(msg.getBytes());
+						} else {
+							msg = "UNREACHABLE("+clientIdB+")\n";
+							outputStream.write(msg.getBytes());
+						}
+					} catch (NumberFormatException e) {
+						msg = "ERROR(Requested Incorrect Client ID: " + param + ")\n";
+						System.out.println("Error by " + login + " " + msg);
 						outputStream.write(msg.getBytes());
 					}
-				} 
-				else if ("leave".equalsIgnoreCase(cmd)) {
+				} else if ("END_REQUEST".equalsIgnoreCase(cmd)) {
 					handleLeave();
 					friendWorker.handleLeave();
-				} 
-				else if ("logoff".equals(cmd) || "quit".equalsIgnoreCase(cmd)) {
+					friendWorker.friendWorker = null;
+					this.friendWorker = null;
+				} else if ("ONLINE_REQ".equalsIgnoreCase(cmd)) {
+					List<Integer> usersOnline = new ArrayList<Integer>(server.usersKey.keySet());
+					if (usersOnline.size() == 1 && usersOnline.get(0) == login) {
+						msg = "ONLINE_RESP(No other users online)\n";
+						outputStream.write(msg.getBytes());
+					} else {
+						for (Integer user : usersOnline) {
+							if (user != login) {
+								msg = "ONLINE_RESP(" + user + ")\n";
+								outputStream.write(msg.getBytes());
+							}
+						}
+					}
+				} else if ("LOGOFF".equalsIgnoreCase(cmd)) {
 					handleLogoff();
 					break;
-				} 
-				else {
+				} else if ("HISTORY_REQ".equalsIgnoreCase(cmd)) {
+					try {
+						int clientB = Integer.parseInt(param);
+						if (openSession == null && friendWorker == null) {
+							String[] chatLogs = controller.requestHistory(login, clientB);
+							
+							if (chatLogs == null) {
+								msg = "HISTORY_RESP(No History)\n";
+								outputStream.write(msg.getBytes());
+							} else {
+								for (int i = 0; i < chatLogs.length; i++) {
+									msg = "HISTORY_RESP(" + chatLogs[i] + ")\n";
+									outputStream.write(msg.getBytes());
+								}
+								
+							}
+						}
+					} catch (NumberFormatException e) {
+						msg = "ERROR(Requested Incorrect Client ID: " + param + ")\n";
+						System.out.println("Error by " + login + " " + msg);
+						outputStream.write(msg.getBytes());
+					}
+				} else {
 					msg = "UNKNOWN(" + cmd + ")\n";
 					outputStream.write(msg.getBytes());
 				}
@@ -92,25 +156,23 @@ public class ServerTCPWorker extends Thread {
 	}
 
 	private void handleLeave() throws IOException {
-		String msg = "LEAVE(" + friendWorker.getLogin() + " has left the room)\n";
-		this.friendWorker = null;
-		this.available = true;
+		String msg = "END_NOTIF("+openSession.getSessionId()+")\n";
+		this.openSession = null;
 		outputStream.write(msg.getBytes());
 	}
 
 	
-	private boolean handleJoin(String loginId) {
+	private boolean handleJoin(int loginId) {
 		// Token[1] should = ID
 		// Connect this.ID to Token[1]
 
 		List<ServerTCPWorker> onlineUsers = server.getWorkerList();
 		for (ServerTCPWorker user : onlineUsers) {
-			if (user.getLogin().equals(loginId)) {
-				if (!user.available) {
+			if (user.getLogin() == (loginId)) {
+				if (user.openSession != null) {
 					return false;
 				}
 				this.friendWorker = user;
-				user.available = false;
 				
 				return true;
 			}
@@ -120,37 +182,37 @@ public class ServerTCPWorker extends Thread {
 		
 	}
 
-	public boolean isAvailable() {
-		return available;
-	}
-
-	public void setAvailable(boolean available) {
-		this.available = available;
-	}
-
 	//Sends Message to the currently open chat
-	private void sendMessage(String message) throws IOException {
-		String msg = "MSG(" + login + ":" + message + ")\n"; 
+	private void sendMessage(String encMessage) throws IOException {
+		String decMessage = workerCryptor.decrypt(encMessage, CKA);
+		controller.logChat(openSession.getSessionId(), login, decMessage);
+		
+		String fullText = login + ":" + decMessage;
+		String newMessage = friendWorker.workerCryptor.encrypt(fullText, friendWorker.CKA);
+		
+		String msg = "CHAT(" + newMessage + ")\n"; 
 		friendWorker.outputStream.write(msg.getBytes());
 		// *Forward message to appropriate client*
 	}
 
 	
 	private void handleLogoff() throws IOException {
-		
-		// *Update list of active users*
 		if (friendWorker != null) {
 			friendWorker.handleLeave();
 		}
+		
+		String msg = "ALERT(Logged off as " + login + ")\n";
+		outputStream.write(msg.getBytes());
+		
 		clientSocket.close();
 	}
 
-	private String getLogin() {
+	private int getLogin() {
 		return login;
 	}
 	
-	private void handleLogin(OutputStream outputStream, String[] tokens) throws IOException {
-		this.login = tokens[1];
+	private void handleLogin(OutputStream outputStream, String param) throws IOException {
+		this.login = Integer.parseInt(param);
 		
 		// *Add this login to Active users list*
 	}

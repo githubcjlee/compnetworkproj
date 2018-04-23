@@ -1,7 +1,10 @@
 package com.chat.model;
 
 
-
+/*
+ * @author Charlie Nguyen, Ted Ahn
+ * 
+ */
 public class ChatSession {
 	private int sessionId;
 	private int clientA;

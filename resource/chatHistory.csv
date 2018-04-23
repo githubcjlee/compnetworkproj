@@ -1,1 +1,22 @@
-chatId,sessionId,chatTexts
+sessionId,byClientId,chatTexts
+1,101,hi
+1,100,hello there
+1,101,how are you doing
+1,100,fine!
+1,101,gtg bye!
+1,100,ttyl!2,200,hello
+2,100,hi
+3,201,Decryption failed.
+3,201,Decryption failed.
+4,200,Decryption failed.
+5,401,hello
+6,401,can you read this
+6,400,hello
+6,400,hello
+7,200,hi
+7,200,hi
+7,200,dslkflaskdgl;asdflas;ldfgasf
+8,103,heiro
+9,204,hello
+10,106,Can you read this?
+10,105,Yes I can!

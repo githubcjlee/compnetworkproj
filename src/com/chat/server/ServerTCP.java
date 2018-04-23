@@ -5,13 +5,21 @@ import java.io.IOException;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+/*
+ * @author Aaron Im
+ * @contributor Ted Ahn
+ * 
+ */
 public class ServerTCP extends Thread {
 
 	private final int serverPort;
     private ArrayList<ServerTCPWorker> workerList = new ArrayList<ServerTCPWorker>();
+    public Map<Integer,Integer> usersKey;
 
-	public ServerTCP(int serverPort) {
+	public ServerTCP(Map<Integer,Integer> usersKey, int serverPort) {
+		this.usersKey = usersKey;
 		this.serverPort = serverPort;
 	}
 	

@@ -2,12 +2,19 @@ package com.chat.server;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.Map;
 
+/*
+ * @author Aaron Im
+ * 
+ */
 public class ServerUDP extends Thread {
 	private final int serverPort;
 	private final int tcpport;
+    public Map<Integer,Integer> usersKey;
 
-	public ServerUDP(int serverPort, int _tcpport) {
+	public ServerUDP(Map<Integer,Integer> usersKey, int serverPort, int _tcpport) {
+		this.setUsersKey(usersKey);
 		this.serverPort = serverPort;
 		this.tcpport = _tcpport;
 	}
@@ -31,7 +38,7 @@ public class ServerUDP extends Thread {
 				int ClientPort = receivePacket.getPort();
 
 				// Start a ServerUDPWorker class
-				ServerUDPWorker worker = new ServerUDPWorker(serverUDPSocket, ClientIPAddress, ClientPort, this.tcpport,
+				ServerUDPWorker worker = new ServerUDPWorker(this, serverUDPSocket, ClientIPAddress, ClientPort, this.tcpport,
 						sentence);
 				worker.start();
 				worker.join();
@@ -40,5 +47,13 @@ public class ServerUDP extends Thread {
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public Map<Integer,Integer> getUsersKey() {
+		return usersKey;
+	}
+
+	public void setUsersKey(Map<Integer,Integer> usersKey) {
+		this.usersKey = usersKey;
 	}
 }

@@ -1,15 +1,16 @@
 package com.chat.plugin;
 
-import javax.swing.*;
+import java.nio.charset.Charset;
 import java.security.SecureRandom;
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Random;
 
+/*
+ * @author Chris Lee
+ * 
+ */
 public class AESKeyGeneration {
-	byte[] skey = new byte[1000];
+	byte[] skey = new byte[1024];
 	String skeyString;
 	static byte[] raw;
 
@@ -23,7 +24,12 @@ public class AESKeyGeneration {
 
 			byte[] knumb = knum.getBytes();
 			skey = getRawKey(knumb);
-			skeyString = new String(skey);
+			skeyString = new String(skey,Charset.forName("ISO-8859-1"));
+			while (skeyString.equals(",") || skeyString.contains(" ")) {
+				skey = getRawKey(knumb);
+				skeyString = new String(skey,Charset.forName("ISO-8859-1"));
+			}
+			//System.out.println("[AES-KGen]:"+skeyString);
 			return skeyString;
 		} catch (Exception e) {
 			System.out.println(e);
@@ -31,6 +37,21 @@ public class AESKeyGeneration {
 		return null;
 	}
 
+	public String generateChatKey(String _key) {
+		try {
+			String knum = _key;
+
+			byte[] knumb = knum.getBytes();
+			skey = getRawKey(knumb);
+			skeyString = new String(skey,Charset.forName("ISO-8859-1"));
+			
+			//System.out.println("[AES-KGen]:"+skeyString);
+			return skeyString;
+		} catch (Exception e) {
+			System.out.println(e);
+		}
+		return null;
+	}
 	private static byte[] getRawKey(byte[] seed) throws Exception {
 		KeyGenerator kgen = KeyGenerator.getInstance("AES");
 		SecureRandom sr = SecureRandom.getInstance("SHA1PRNG");
@@ -45,7 +66,4 @@ public class AESKeyGeneration {
 		return raw;
 	}
 
-	public static void main(String args[]) {
-		AESKeyGeneration aeskey = new AESKeyGeneration();
-	}
 }
